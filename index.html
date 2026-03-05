@@ -42,7 +42,9 @@
     display:none;
     align-items:center; justify-content:center;
     padding:20px;
-    overflow:auto; /* ✅ 팝업 자체 스크롤 */
+
+    /* ✅ 팝업 자체도 스크롤 허용 */
+    overflow:auto;
   }
   .popup-content{
     width:min(1100px, 95vw);
@@ -50,9 +52,11 @@
     border-radius:16px;
     padding:18px;
     box-shadow: 0 30px 80px rgba(0,0,0,.25);
-    max-height:90vh;   /* ✅ 내용 스크롤 */
+
+    /* ✅ 팝업 내용 스크롤 */
+    max-height:90vh;
     overflow-y:auto;
-    overflow-x:hidden;
+    overflow-x:auto; /* ✅ 모바일에서 2컬럼 유지 위해 가로 스크롤 허용 */
   }
 
   /* top bar */
@@ -125,9 +129,12 @@
   /* middle grid */
   .grid{
     display:grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr; /* ✅ 기본: 좌우 */
     gap:14px;
     padding:14px 10px;
+
+    /* ✅ 모바일에서도 2컬럼 유지(필요시 가로 스크롤) */
+    min-width: 900px;
   }
   .card{
     border:1px solid var(--line);
@@ -226,6 +233,23 @@
   .ring.near{ border-color: rgba(255,140,0,.55); }
   .ring.mid { border-color: rgba(0,160,120,.50); }
   .ring.dist{ border-color: rgba(0,94,184,.45); }
+
+  /* ✅ OZ 링 + 렌즈 위 동공 overlay */
+  .ring.oz{
+    border-color: rgba(16,42,67,.35);
+    border-style: dashed;
+    filter:none;
+  }
+  .pupilOverlay{
+    position:absolute;
+    left:50%; top:50%;
+    transform:translate(-50%,-50%);
+    border-radius:50%;
+    background: rgba(0,0,0,.16);
+    box-shadow: inset 0 0 0 2px rgba(0,0,0,.18);
+    transition: width .45s ease, height .45s ease;
+    pointer-events:none;
+  }
 
   .legend{
     display:flex;
@@ -376,7 +400,6 @@
   }
   .mapGrid{
     display:grid;
-    grid-template-columns: 70px repeat(5, 1fr);
     gap:10px;
     align-items:center;
   }
@@ -399,9 +422,9 @@
     box-shadow: 0 0 0 6px rgba(0,94,184,.14);
   }
 
+  /* ✅ 기존 media query는 grid 1컬럼으로 바꾸던 부분이 있어 "좌우 유지"를 위해 제거/완화 */
   @media (max-width: 980px){
-    .grid{ grid-template-columns:1fr; }
-    .visionStage{ grid-template-columns: 1fr; }
+    .visionStage{ grid-template-columns: 1fr; } /* 비전 시뮬만 1컬럼 허용 */
   }
 </style>
 </head>
@@ -423,13 +446,8 @@
     <div class="topbar">
       <div class="controls">
         <label>Sphere
-          <select id="sphere">
-            <option value="0">-1.00</option>
-            <option value="1">-2.00</option>
-            <option value="2">-3.00</option>
-            <option value="3">-4.00</option>
-            <option value="4">-5.00</option>
-          </select>
+          <!-- ✅ 도수 범위: +6 ~ -9 -->
+          <select id="sphere"></select>
         </label>
 
         <label>ADD
@@ -467,9 +485,9 @@
 
           <div class="spec">
             <div class="pill"><span>Estimated Pupil</span> <b id="pupilText">4.0 mm</b></div>
-            <div class="pill"><span>Assumption</span> <b>ADD↑ → Pupil↓</b></div>
+            <div class="pill"><span>Assumption</span> <b>ADD↑ / |Sphere|↑ → Pupil↓</b></div>
             <div class="muted" id="pupilNote">
-              * 데모: ADD 값에 따라 동공 크기를 단순 추정합니다.
+              * 데모: ADD와 |Sphere|에 따라 동공 크기가 미세하게 변합니다.
             </div>
           </div>
         </div>
@@ -480,6 +498,10 @@
         <h3>렌즈 구조</h3>
         <div class="lensWrap">
           <div class="lens" aria-label="lens">
+            <!-- ✅ OZ 링 + 동공 overlay 추가 -->
+            <div class="ring oz" id="ringOZ" style="width:120px;height:120px"></div>
+            <div class="pupilOverlay" id="pupilOverlay" style="width:90px;height:90px"></div>
+
             <div class="ring dist" id="ringDist" style="width:190px;height:190px"></div>
             <div class="ring mid"  id="ringMid"  style="width:130px;height:130px"></div>
             <div class="ring near" id="ringNear" style="width:80px;height:80px"></div>
@@ -487,17 +509,18 @@
 
           <div class="legend">
             <div class="tagRow">
+              <!-- ✅ 한글 보조표기 (원/중/근) -->
               <div class="tag"><span class="dot d"></span> Distance <span style="opacity:.7">(원)</span></div>
               <div class="tag"><span class="dot m"></span> Intermediate <span style="opacity:.7">(중)</span></div>
               <div class="tag"><span class="dot n"></span> Near <span style="opacity:.7">(근)</span></div>
             </div>
 
-            <div class="pill"><span>Optic Zone (표준)</span> <b id="opticText">4.0 mm</b></div>
+            <div class="pill"><span>Optic Zone (OZ)</span> <b id="opticText">6.0 mm</b></div>
 
             <!-- ✅ Design ID 삭제 -->
 
             <div class="muted" id="lensNote">
-              * 데모: OFF는 단일 광학부(고정), ON은 동공/ADD에 따라 링 비율이 달라지는 연출입니다.
+              * 렌즈 직경 14.5mm / OFF: OZ=6.0mm 고정 / ON: OZ≈Pupil
             </div>
           </div>
         </div>
@@ -533,58 +556,35 @@
 
           <div class="explain" id="explainBox">
             <strong>해석 로직(데모)</strong><br>
+
+            <!-- ✅ OFF/ON 문구 분리 -->
             <div id="logicStandard" style="display:block">
-              • OFF(표준/1광학부): 광학부(예: 4.0mm) 고정<br>
+              • OFF(표준/1광학부): 광학부(OZ) 고정<br>
               • 동공 &lt; 광학부: “중심(원거리) 흐림” 느낌(센터 마스크 블러)<br>
               • 동공 &gt; 광학부: “주변 distortion(어항)” 느낌(주변 마스크 블러 + fishbowl)<br>
             </div>
+
             <div id="logic183" style="display:none">
               • ON(183): 전체적으로 균형(효과 최소화)<br>
             </div>
-            <!-- ✅ 배지 2개 삭제 -->
+
+            <!-- ✅ 하단 배지 2개 삭제 -->
           </div>
         </div>
       </div>
 
-      <!-- ADD x Sphere map -->
+      <!-- ✅ Optical Design Map 유지 + 도수 범위 +6 ~ -9 -->
       <div class="mapCard">
         <div class="mapHead">
           <h3 style="margin:0">Optical Design Map (ADD × Sphere)</h3>
           <div class="muted">선택된 조합 위치를 간단히 하이라이트</div>
         </div>
 
-        <div class="mapGrid" id="mapGrid">
-          <div></div>
-          <div class="muted" style="text-align:center;font-weight:900">-1.00</div>
-          <div class="muted" style="text-align:center;font-weight:900">-2.00</div>
-          <div class="muted" style="text-align:center;font-weight:900">-3.00</div>
-          <div class="muted" style="text-align:center;font-weight:900">-4.00</div>
-          <div class="muted" style="text-align:center;font-weight:900">-5.00</div>
-
-          <div class="yLabel">HIGH</div>
-          <div class="bubble" data-idx="10"></div>
-          <div class="bubble" data-idx="11"></div>
-          <div class="bubble" data-idx="12"></div>
-          <div class="bubble" data-idx="13"></div>
-          <div class="bubble" data-idx="14"></div>
-
-          <div class="yLabel">MID</div>
-          <div class="bubble" data-idx="5"></div>
-          <div class="bubble" data-idx="6"></div>
-          <div class="bubble" data-idx="7"></div>
-          <div class="bubble" data-idx="8"></div>
-          <div class="bubble" data-idx="9"></div>
-
-          <div class="yLabel">LOW</div>
-          <div class="bubble" data-idx="0"></div>
-          <div class="bubble" data-idx="1"></div>
-          <div class="bubble" data-idx="2"></div>
-          <div class="bubble" data-idx="3"></div>
-          <div class="bubble" data-idx="4"></div>
-        </div>
+        <!-- JS로 동적 생성 -->
+        <div class="mapGrid" id="mapGrid"></div>
 
         <div class="muted" style="margin-top:10px">
-          * 데모 맵: 3(ADD)×5(Sphere)로 단순화해 표시했어요.
+          * 데모 맵: 3(ADD) × 16(Sphere: +6 ~ -9)
         </div>
       </div>
 
@@ -611,12 +611,12 @@
   const ringMid  = document.getElementById('ringMid');
   const ringDist = document.getElementById('ringDist');
 
-  const bubbles = [...document.querySelectorAll('.bubble')];
+  const ringOZ = document.getElementById('ringOZ');
+  const pupilOverlay = document.getElementById('pupilOverlay');
 
   const screen = document.getElementById('screen');
   const statusBadges = document.getElementById('statusBadges');
 
-  // logic text blocks
   const logicStandard = document.getElementById('logicStandard');
   const logic183 = document.getElementById('logic183');
 
@@ -626,18 +626,80 @@
   const fallbackImg = document.getElementById('fallbackImg');
   const fallbackImgBlur = document.getElementById('fallbackImgBlur');
 
-  // ====== Simple demo constants ======
-  const pupilByAdd = [4.5, 3.8, 3.0]; // mm
-  const standardOpticZone = 4.0; // mm
-
-  function getDesignMode(){
-    return [...designRadios].find(r=>r.checked)?.value || 'standard';
+  // ====== Sphere list (+6 ~ -9) ======
+  const sphereValues = [];
+  for(let v=6; v>=-9; v--){
+    sphereValues.push(v);
+  }
+  function fmtSphere(v){
+    if(v>0) return `+${v}.00`;
+    if(v===0) return `0.00`;
+    return `${v}.00`;
+  }
+  function buildSphereOptions(){
+    sphereSel.innerHTML = '';
+    sphereValues.forEach((v)=>{
+      const opt = document.createElement('option');
+      opt.value = String(v);
+      opt.textContent = fmtSphere(v);
+      sphereSel.appendChild(opt);
+    });
+    // 기본 선택: -1.00 (기존 코드 느낌 유지)
+    sphereSel.value = "-1";
   }
 
-  function calcIndex(){
-    const s = Number(sphereSel.value);
-    const a = Number(addSel.value);
-    return a*5 + s;
+  // ====== Map build (3 x 16) ======
+  let bubbles = [];
+  function buildMap(){
+    const grid = document.getElementById('mapGrid');
+    grid.innerHTML = '';
+
+    // grid columns: label + 16 spheres
+    grid.style.gridTemplateColumns = `70px repeat(${sphereValues.length}, 1fr)`;
+
+    // header row
+    grid.appendChild(document.createElement('div')); // empty corner
+    sphereValues.forEach(v=>{
+      const h = document.createElement('div');
+      h.className = 'muted';
+      h.style.textAlign = 'center';
+      h.style.fontWeight = '900';
+      h.textContent = fmtSphere(v);
+      grid.appendChild(h);
+    });
+
+    const addLabels = ['HIGH','MID','LOW']; // 위에서 아래로
+    bubbles = [];
+
+    addLabels.forEach((lbl, rowIdx)=>{
+      const y = document.createElement('div');
+      y.className = 'yLabel';
+      y.textContent = lbl;
+      grid.appendChild(y);
+
+      sphereValues.forEach((sv, colIdx)=>{
+        const b = document.createElement('div');
+        b.className = 'bubble';
+        b.style.cursor = 'pointer';
+        b.title = '해당 조합 위치(데모)';
+        b.dataset.add = String(2-rowIdx); // HIGH(2), MID(1), LOW(0)
+        b.dataset.sphere = String(sv);
+
+        b.addEventListener('click', ()=>{
+          addSel.value = b.dataset.add;
+          sphereSel.value = b.dataset.sphere;
+          updateAll();
+        });
+
+        bubbles.push(b);
+        grid.appendChild(b);
+      });
+    });
+  }
+
+  // ====== Helpers ======
+  function getDesignMode(){
+    return [...designRadios].find(r=>r.checked)?.value || 'standard';
   }
 
   function setBadges(items){
@@ -650,52 +712,91 @@
     });
   }
 
-  function updateMapHighlight(idx){
+  function updateMapHighlight(addIdx, sphereVal){
     bubbles.forEach(b=>b.classList.remove('active'));
-    const target = bubbles.find(b=>Number(b.dataset.idx)===idx);
-    if(target) target.classList.add('active');
+    const t = bubbles.find(b=>Number(b.dataset.add)===addIdx && Number(b.dataset.sphere)===sphereVal);
+    if(t) t.classList.add('active');
   }
 
   function mmToPupilPx(mm){
-    const minMM = 2.5, maxMM = 5.5;
-    const minPX = 46,  maxPX = 96;
+    // map ~2.5-5.8mm to ~46-102px
+    const minMM = 2.5, maxMM = 5.8;
+    const minPX = 46,  maxPX = 102;
     const t = Math.max(0, Math.min(1, (mm - minMM)/(maxMM-minMM)));
     return Math.round(minPX + (maxPX-minPX)*t);
   }
 
+  // ====== Lens physical constants ======
+  const lensDiameterMM = 14.5;
+  const lensPx = 220;                 // lens div size (CSS)
+  const pxPerMM = lensPx / lensDiameterMM;
+
+  // OFF: OZ fixed 6.0mm
+  const ozFixedMM = 6.0;
+
+  // ====== Pupil model (ADD + |Sphere|) ======
+  function calcPupilMM(addIdx, sphereVal){
+    // base around plano
+    let pupil = 5.2;
+
+    // ADD effect
+    const addEffect = [0.0, 0.55, 1.10][addIdx] || 0.0;
+    pupil -= addEffect;
+
+    // sphere effect: both plus/minus => smaller as |sphere| increases
+    pupil -= Math.abs(sphereVal) * 0.18;
+
+    // clamp
+    pupil = Math.max(2.5, Math.min(5.8, pupil));
+    return pupil;
+  }
+
   function applyLensRings(mode, pupilMM, addIdx){
-    const base = 190;
-    let near = 78, mid = 128, dist = 186;
-
-    if(mode === 'standard'){
-      const addBoost = [ -6, 0, +8 ][addIdx];
-      near = 76 + addBoost;
-      mid  = 126 + addBoost*0.5;
-      dist = 186;
-    } else {
-      const pupilT = Math.max(0, Math.min(1, (pupilMM - 2.8)/(5.2-2.8)));
-      const addNear = [ 0, +10, +22 ][addIdx];
-      near = 70 + addNear + Math.round((1 - pupilT)*18);
-      mid  = 120 + Math.round((0.5 - Math.abs(pupilT-0.5))*10);
-      dist = base - 2;
+    // OZ
+    let ozMM = ozFixedMM;
+    if(mode === '183'){
+      // ON: OZ ~ pupil (clamp up to 6.0)
+      ozMM = Math.max(2.5, Math.min(ozFixedMM, pupilMM));
     }
+    const ozPx = ozMM * pxPerMM;
 
-    ringNear.style.width = `${near}px`; ringNear.style.height = `${near}px`;
-    ringMid.style.width  = `${mid}px`;  ringMid.style.height  = `${mid}px`;
+    // Set OZ ring size
+    ringOZ.style.width = `${ozPx}px`;
+    ringOZ.style.height = `${ozPx}px`;
+
+    // pupil overlay size (for visual compare)
+    const pupilPxOnLens = pupilMM * pxPerMM;
+    pupilOverlay.style.width = `${pupilPxOnLens}px`;
+    pupilOverlay.style.height = `${pupilPxOnLens}px`;
+
+    // All rings must be within OZ and generally "reduced"
+    // ratios tuned so dist/mid/near fit inside OZ
+    const dist = ozPx * 0.90;
+    const mid  = ozPx * 0.62;
+    const near = ozPx * 0.38;
+
     ringDist.style.width = `${dist}px`; ringDist.style.height = `${dist}px`;
+    ringMid.style.width  = `${mid}px`;  ringMid.style.height  = `${mid}px`;
+    ringNear.style.width = `${near}px`; ringNear.style.height = `${near}px`;
+
+    // Text
+    opticText.textContent = `${ozMM.toFixed(1)} mm`;
   }
 
   function applyVisionEffect(mode, pupilMM){
+    // mismatch based on OFF fixed OZ
     screen.classList.remove('mask-center','mask-periphery','fishbowl');
 
-    const diff = pupilMM - standardOpticZone;
+    const ozMM = ozFixedMM;
+    const diff = pupilMM - ozMM;
     const absDiff = Math.abs(diff);
 
     if(mode === '183'){
       setBadges([
         {label:'183 ON', type:'good'},
         {label:'Balanced vision (demo)', type:'good'},
-        {label:`Pupil ${pupilMM.toFixed(1)}mm`, type:''}
+        {label:`Pupil ${pupilMM.toFixed(1)}mm`, type:''},
+        {label:`OZ≈Pupil`, type:'good'}
       ]);
       return;
     }
@@ -704,7 +805,7 @@
       setBadges([
         {label:'OFF(표준)', type:'warn'},
         {label:'Pupil≈Optic zone', type:'warn'},
-        {label:`Pupil ${pupilMM.toFixed(1)}mm / OZ 4.0mm`, type:''}
+        {label:`Pupil ${pupilMM.toFixed(1)}mm / OZ ${ozMM.toFixed(1)}mm`, type:''}
       ]);
       return;
     }
@@ -715,7 +816,7 @@
         {label:'OFF(표준)', type:'warn'},
         {label:'Pupil < Optic zone', type:'bad'},
         {label:'Distance blur (center)', type:'bad'},
-        {label:`Pupil ${pupilMM.toFixed(1)}mm / OZ 4.0mm`, type:''}
+        {label:`Pupil ${pupilMM.toFixed(1)}mm / OZ ${ozMM.toFixed(1)}mm`, type:''}
       ]);
     } else {
       screen.classList.add('mask-periphery','fishbowl');
@@ -723,7 +824,7 @@
         {label:'OFF(표준)', type:'warn'},
         {label:'Pupil > Optic zone', type:'bad'},
         {label:'Periphery distortion (fishbowl)', type:'bad'},
-        {label:`Pupil ${pupilMM.toFixed(1)}mm / OZ 4.0mm`, type:''}
+        {label:`Pupil ${pupilMM.toFixed(1)}mm / OZ ${ozMM.toFixed(1)}mm`, type:''}
       ]);
     }
   }
@@ -740,16 +841,16 @@
 
   function updateAll(){
     const addIdx = Number(addSel.value);
-    const pupilMM = pupilByAdd[addIdx];
+    const sphereVal = Number(sphereSel.value);
+
+    const pupilMM = calcPupilMM(addIdx, sphereVal);
     const pupilPX = mmToPupilPx(pupilMM);
+
     pupilEl.style.width = `${pupilPX}px`;
     pupilEl.style.height = `${pupilPX}px`;
     pupilText.textContent = `${pupilMM.toFixed(1)} mm`;
 
-    opticText.textContent = `${standardOpticZone.toFixed(1)} mm`;
-
-    const idx = calcIndex();
-    updateMapHighlight(idx);
+    updateMapHighlight(addIdx, sphereVal);
 
     const mode = getDesignMode();
     applyLensRings(mode, pupilMM, addIdx);
@@ -782,20 +883,6 @@
   sphereSel.addEventListener('change', updateAll);
   addSel.addEventListener('change', updateAll);
   designRadios.forEach(r=>r.addEventListener('change', updateAll));
-
-  // ====== Map click (optional) ======
-  bubbles.forEach(b=>{
-    b.style.cursor='pointer';
-    b.title = '해당 조합 위치(데모)';
-    b.addEventListener('click', ()=>{
-      const idx = Number(b.dataset.idx);
-      const a = Math.floor(idx/5);
-      const s = idx % 5;
-      addSel.value = String(a);
-      sphereSel.value = String(s);
-      updateAll();
-    });
-  });
 
   // ====== Camera logic ======
   let stream = null;
@@ -844,6 +931,8 @@
   });
 
   // init
+  buildSphereOptions();
+  buildMap();
   updateAll();
 </script>
 </body>
