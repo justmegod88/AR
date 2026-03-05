@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>ACUVUE Smart Fitting | AR 카메라</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body class="app">
+  <header class="topbar">
+    <div class="topbar-left">촬영</div>
+    <div class="topbar-right">
+      <button class="pill" id="btnClose" type="button">닫기</button>
+    </div>
+  </header>
+
+  <main class="stage">
+    <section class="cameraWrap" aria-label="카메라 화면">
+      <video id="video" playsinline autoplay muted></video>
+
+      <!-- 오버레이(가이드) -->
+      <div class="overlay">
+        <div class="guideRing ring1"></div>
+        <div class="guideRing ring2"></div>
+        <div class="guideRing ring3"></div>
+
+        <!-- 123 마크 가이드(예시) -->
+        <div class="mark123" aria-hidden="true">123</div>
+
+        <div class="overlayHint">
+          렌즈를 원 안에 맞춰 촬영해 주세요
+        </div>
+      </div>
+
+      <!-- 캡처용(숨김) -->
+      <canvas id="captureCanvas" class="hidden"></canvas>
+    </section>
+
+    <section class="panel">
+      <div class="panelRow">
+        <div class="status">상태: <b id="statusText">카메라 준비 중</b></div>
+        <div class="howto">조작: <b>렌즈 중앙 정렬 → 촬영</b></div>
+      </div>
+
+      <div class="actions">
+        <button class="btnPrimary" id="btnShoot" type="button">촬영하기</button>
+        <button class="btnGhost" id="btnSkip" type="button">AR 없이 3D 보기</button>
+      </div>
+
+      <div class="note">
+        * 이 페이지는 데모용입니다. 실제 인식/판정 로직은 추후 연결하세요.
+      </div>
+    </section>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>
