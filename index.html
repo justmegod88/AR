@@ -1,58 +1,884 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>ACUVUE Smart Fitting | AR 카메라</title>
-  <link rel="stylesheet" href="./styles.css" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>183 Pupil Optimized Demo (Prototype)</title>
+
+<style>
+  :root{
+    --acuvue-blue:#005EB8;
+    --bg:#f2f4f7;
+    --card:#ffffff;
+    --line:#d9e2ec;
+    --text:#102a43;
+    --sub:#486581;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    padding:28px;
+  }
+
+  /* open button */
+  #openBtn{
+    padding:12px 18px;
+    background:var(--acuvue-blue);
+    color:#fff;
+    border:none;
+    border-radius:10px;
+    font-weight:700;
+    cursor:pointer;
+    box-shadow: 0 10px 25px rgba(16,42,67,.18);
+  }
+
+  /* popup */
+  .popup{
+    position:fixed; inset:0;
+    background:rgba(0,0,0,.55);
+    display:none;
+    align-items:center; justify-content:center;
+    padding:20px;
+  }
+  .popup-content{
+    width:min(1100px, 95vw);
+    background:var(--card);
+    border-radius:16px;
+    padding:18px;
+    box-shadow: 0 30px 80px rgba(0,0,0,.25);
+    overflow:hidden;
+  }
+
+  /* top bar */
+  .topbar{
+    display:flex;
+    gap:12px;
+    align-items:center;
+    justify-content:space-between;
+    border-bottom:1px solid var(--line);
+    padding:10px 10px 14px;
+  }
+  .controls{
+    display:flex;
+    gap:12px;
+    align-items:center;
+    flex-wrap:wrap;
+  }
+  label{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-weight:700;
+    color:var(--sub);
+  }
+  select{
+    border:1px solid var(--line);
+    padding:8px 10px;
+    border-radius:10px;
+    background:#fff;
+    font-weight:700;
+    color:var(--text);
+  }
+
+  .toggleGroup{
+    display:flex;
+    gap:8px;
+    align-items:center;
+    padding:6px 10px;
+    border:1px solid var(--line);
+    border-radius:12px;
+    background:#fafbfc;
+  }
+  .toggleGroup strong{ color:var(--sub); font-size:13px; }
+  .radio{
+    display:flex; gap:10px; align-items:center;
+  }
+  .radio label{
+    font-weight:800;
+    color:var(--text);
+    gap:6px;
+  }
+
+  .rightActions{
+    display:flex; gap:10px; align-items:center;
+  }
+  .btn{
+    border:1px solid var(--line);
+    background:#fff;
+    border-radius:10px;
+    padding:9px 12px;
+    font-weight:800;
+    cursor:pointer;
+  }
+  .btn.primary{
+    background:var(--acuvue-blue);
+    border-color:var(--acuvue-blue);
+    color:#fff;
+  }
+
+  /* middle grid */
+  .grid{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:14px;
+    padding:14px 10px;
+  }
+  .card{
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:12px;
+    background:#fff;
+    min-height:260px;
+  }
+  .card h3{
+    margin:0 0 8px;
+    font-size:15px;
+  }
+  .muted{ color:var(--sub); font-weight:700; font-size:13px; }
+
+  /* patient pupil */
+  .pupilWrap{
+    display:flex;
+    gap:12px;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .eye{
+    width:220px;
+    height:220px;
+    border-radius:50%;
+    background: radial-gradient(circle at 40% 35%, #ffffff 0%, #e9eff5 45%, #d7e2ee 100%);
+    border:1px solid var(--line);
+    position:relative;
+    overflow:hidden;
+  }
+  .iris{
+    position:absolute;
+    inset:18%;
+    border-radius:50%;
+    background: radial-gradient(circle at 30% 30%, #8fb3d9 0%, #2b6cb0 35%, #1a365d 100%);
+    box-shadow: inset 0 0 25px rgba(0,0,0,.25);
+  }
+  .pupil{
+    position:absolute;
+    left:50%; top:50%;
+    width:70px; height:70px;
+    transform:translate(-50%,-50%);
+    border-radius:50%;
+    background:#06121f;
+    box-shadow: 0 0 0 10px rgba(255,255,255,.08);
+    transition: width .45s ease, height .45s ease;
+  }
+  .spec{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .pill{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:8px 10px;
+    background:#fafbfc;
+    font-weight:900;
+    color:var(--text);
+    width:fit-content;
+  }
+  .pill span{
+    color:var(--sub);
+    font-weight:900;
+  }
+
+  /* lens structure */
+  .lensWrap{
+    display:flex;
+    gap:12px;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .lens{
+    width:220px;
+    height:220px;
+    border-radius:50%;
+    border:1px solid var(--line);
+    background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.95), rgba(255,255,255,.4) 40%, rgba(250,252,255,.15) 70%, rgba(240,246,255,.1));
+    position:relative;
+    overflow:hidden;
+  }
+  .ring{
+    position:absolute;
+    left:50%; top:50%;
+    transform:translate(-50%,-50%);
+    border-radius:50%;
+    border:2px solid rgba(0,94,184,.35);
+    filter: drop-shadow(0 0 8px rgba(0,94,184,.12));
+    transition: width .45s ease, height .45s ease, border-color .45s ease;
+  }
+  .ring.near{ border-color: rgba(255,140,0,.55); }
+  .ring.mid { border-color: rgba(0,160,120,.50); }
+  .ring.dist{ border-color: rgba(0,94,184,.45); }
+
+  .legend{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    flex:1;
+  }
+  .tagRow{
+    display:flex; gap:8px; flex-wrap:wrap;
+  }
+  .tag{
+    display:inline-flex;
+    gap:8px;
+    align-items:center;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:7px 9px;
+    background:#fff;
+    font-weight:900;
+  }
+  .dot{
+    width:10px;height:10px;border-radius:50%;
+    background:#ccc;
+  }
+  .dot.n{ background:rgba(255,140,0,.85); }
+  .dot.m{ background:rgba(0,160,120,.85); }
+  .dot.d{ background:rgba(0,94,184,.85); }
+
+  /* bottom area */
+  .bottom{
+    padding:0 10px 14px;
+    display:grid;
+    grid-template-columns: 1fr;
+    gap:12px;
+  }
+
+  .visionCard{
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:12px;
+    background:#fff;
+  }
+  .visionHead{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:12px;
+    margin-bottom:10px;
+  }
+  .status{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+  }
+  .badge{
+    padding:6px 10px;
+    border-radius:999px;
+    font-weight:900;
+    font-size:12px;
+    border:1px solid var(--line);
+    background:#fafbfc;
+    color:var(--sub);
+  }
+  .badge.good{ border-color: rgba(0,160,120,.35); background: rgba(0,160,120,.08); color:#0b5; }
+  .badge.warn{ border-color: rgba(255,140,0,.35); background: rgba(255,140,0,.10); color:#b45309; }
+  .badge.bad { border-color: rgba(220,38,38,.35); background: rgba(220,38,38,.10); color:#b91c1c; }
+
+  .visionStage{
+    display:grid;
+    grid-template-columns: 1fr 320px;
+    gap:12px;
+    align-items:stretch;
+  }
+
+  /* video/img container */
+  .screen{
+    border:1px solid var(--line);
+    border-radius:14px;
+    overflow:hidden;
+    background:#000;
+    position:relative;
+    min-height:260px;
+  }
+  .screen video, .screen img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+  }
+
+  /* layered effect: base layer + blurred layer + mask */
+  .layer{
+    position:absolute; inset:0;
+  }
+  .layer.base{
+    filter: none;
+  }
+  .layer.blurred{
+    filter: blur(8px) contrast(1.05);
+    opacity:0;
+    transition: opacity .25s ease;
+  }
+
+  /* mask modes */
+  .mask-center .layer.blurred{
+    opacity:1;
+    -webkit-mask-image: radial-gradient(circle at 50% 50%, rgba(0,0,0,1) 0 46%, rgba(0,0,0,0) 62%);
+    mask-image: radial-gradient(circle at 50% 50%, rgba(0,0,0,1) 0 46%, rgba(0,0,0,0) 62%);
+  }
+  .mask-periphery .layer.blurred{
+    opacity:1;
+    -webkit-mask-image: radial-gradient(circle at 50% 50%, rgba(0,0,0,0) 0 55%, rgba(0,0,0,1) 72%);
+    mask-image: radial-gradient(circle at 50% 50%, rgba(0,0,0,0) 0 55%, rgba(0,0,0,1) 72%);
+  }
+
+  /* fishbowl distortion via svg filter on base layer */
+  .fishbowl .layer.base{
+    filter:url(#fishbowlFilter);
+  }
+
+  /* right panel: quick explanation */
+  .explain{
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:12px;
+    background:#fafbfc;
+    color:var(--sub);
+    font-weight:800;
+    font-size:13px;
+    line-height:1.5;
+  }
+  .explain strong{ color:var(--text); }
+  .mini{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-top:10px;
+  }
+  .mini .badge{ background:#fff; }
+
+  /* 183 map */
+  .mapCard{
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:12px;
+    background:#fff;
+  }
+  .mapHead{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    margin-bottom:10px;
+  }
+  .mapGrid{
+    display:grid;
+    grid-template-columns: 70px repeat(5, 1fr);
+    gap:10px;
+    align-items:center;
+  }
+  .yLabel{
+    font-weight:900;
+    color:var(--sub);
+    text-align:right;
+    padding-right:6px;
+  }
+  .xAxis{
+    display:grid;
+    grid-template-columns: repeat(5,1fr);
+    gap:10px;
+    margin-top:10px;
+    padding-left:80px;
+  }
+  .xLabel{
+    text-align:center;
+    font-weight:900;
+    color:var(--sub);
+    font-size:12px;
+  }
+  .bubble{
+    width:18px; height:18px;
+    border-radius:999px;
+    background:#cbd2d9;
+    margin:0 auto;
+    transition: transform .2s ease, background .2s ease;
+  }
+  .bubble.active{
+    background:var(--acuvue-blue);
+    transform: scale(1.2);
+    box-shadow: 0 0 0 6px rgba(0,94,184,.14);
+  }
+
+  @media (max-width: 980px){
+    .grid{ grid-template-columns:1fr; }
+    .visionStage{ grid-template-columns: 1fr; }
+  }
+</style>
 </head>
-<body class="app">
-  <header class="topbar">
-    <div class="topbar-left">촬영</div>
-    <div class="topbar-right">
-      <button class="pill" id="btnClose" type="button">닫기</button>
-    </div>
-  </header>
 
-  <main class="stage">
-    <section class="cameraWrap" aria-label="카메라 화면">
-      <video id="video" playsinline autoplay muted></video>
+<body>
+<button id="openBtn">183 디자인 체험(데모) 열기</button>
 
-      <!-- 오버레이(가이드) -->
-      <div class="overlay">
-        <div class="guideRing ring1"></div>
-        <div class="guideRing ring2"></div>
-        <div class="guideRing ring3"></div>
+<!-- SVG filter for fishbowl-ish distortion -->
+<svg width="0" height="0" style="position:absolute">
+  <filter id="fishbowlFilter" x="-20%" y="-20%" width="140%" height="140%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.008" numOctaves="1" seed="2" result="noise"/>
+    <feDisplacementMap in="SourceGraphic" in2="noise" scale="18" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
 
-        <!-- 123 마크 가이드(예시) -->
-        <div class="mark123" aria-hidden="true">123</div>
+<div class="popup" id="popup" aria-hidden="true">
+  <div class="popup-content" role="dialog" aria-modal="true">
 
-        <div class="overlayHint">
-          렌즈를 원 안에 맞춰 촬영해 주세요
+    <div class="topbar">
+      <div class="controls">
+        <label>Sphere
+          <select id="sphere">
+            <option value="0">-1.00</option>
+            <option value="1">-2.00</option>
+            <option value="2">-3.00</option>
+            <option value="3">-4.00</option>
+            <option value="4">-5.00</option>
+          </select>
+        </label>
+
+        <label>ADD
+          <select id="add">
+            <option value="0">LOW</option>
+            <option value="1">MID</option>
+            <option value="2">HIGH</option>
+          </select>
+        </label>
+
+        <div class="toggleGroup">
+          <strong>Lens Design</strong>
+          <div class="radio">
+            <label><input type="radio" name="design" value="standard" checked> OFF(표준/1광학부)</label>
+            <label><input type="radio" name="design" value="183"> ON(183 최적화)</label>
+          </div>
         </div>
       </div>
 
-      <!-- 캡처용(숨김) -->
-      <canvas id="captureCanvas" class="hidden"></canvas>
-    </section>
+      <div class="rightActions">
+        <button class="btn" id="camBtn">카메라 ON</button>
+        <button class="btn primary" id="closeBtn">닫기</button>
+      </div>
+    </div>
 
-    <section class="panel">
-      <div class="panelRow">
-        <div class="status">상태: <b id="statusText">카메라 준비 중</b></div>
-        <div class="howto">조작: <b>렌즈 중앙 정렬 → 촬영</b></div>
+    <div class="grid">
+      <!-- Patient pupil -->
+      <div class="card">
+        <h3>환자 동공</h3>
+        <div class="pupilWrap">
+          <div class="eye" aria-label="eye">
+            <div class="iris"></div>
+            <div class="pupil" id="pupil"></div>
+          </div>
+
+          <div class="spec">
+            <div class="pill"><span>Estimated Pupil</span> <b id="pupilText">4.0 mm</b></div>
+            <div class="pill"><span>Assumption</span> <b>ADD↑ → Pupil↓</b></div>
+            <div class="muted" id="pupilNote">
+              * 데모: ADD 값에 따라 동공 크기를 단순 추정합니다.
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div class="actions">
-        <button class="btnPrimary" id="btnShoot" type="button">촬영하기</button>
-        <button class="btnGhost" id="btnSkip" type="button">AR 없이 3D 보기</button>
+      <!-- Lens structure -->
+      <div class="card">
+        <h3>렌즈 구조</h3>
+        <div class="lensWrap">
+          <div class="lens" aria-label="lens">
+            <div class="ring dist" id="ringDist" style="width:190px;height:190px"></div>
+            <div class="ring mid"  id="ringMid"  style="width:130px;height:130px"></div>
+            <div class="ring near" id="ringNear" style="width:80px;height:80px"></div>
+          </div>
+
+          <div class="legend">
+            <div class="tagRow">
+              <div class="tag"><span class="dot d"></span> Distance</div>
+              <div class="tag"><span class="dot m"></span> Intermediate</div>
+              <div class="tag"><span class="dot n"></span> Near</div>
+            </div>
+
+            <div class="pill"><span>Optic Zone (표준)</span> <b id="opticText">4.0 mm</b></div>
+            <div class="pill"><span>Design ID</span> <b id="designId">#087</b></div>
+            <div class="muted" id="lensNote">
+              * 데모: OFF는 단일 광학부(고정), ON은 동공/ADD에 따라 링 비율이 달라지는 연출입니다.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- bottom -->
+    <div class="bottom">
+
+      <!-- Vision simulation -->
+      <div class="visionCard">
+        <div class="visionHead">
+          <div>
+            <h3 style="margin:0">Vision Simulation</h3>
+            <div class="muted">OFF에서 “동공 vs 광학부” mismatch 시야 문제를 체험형으로 보여주는 데모</div>
+          </div>
+          <div class="status" id="statusBadges"></div>
+        </div>
+
+        <div class="visionStage">
+          <div class="screen" id="screen">
+            <!-- Base layer: video or image (two layers for masking) -->
+            <div class="layer base" id="baseLayer">
+              <video id="cam" playsinline autoplay muted style="display:none"></video>
+              <img id="fallbackImg" alt="sample" src="https://picsum.photos/1200/700?random=7" />
+            </div>
+
+            <div class="layer blurred" id="blurLayer">
+              <video id="camBlur" playsinline autoplay muted style="display:none"></video>
+              <img id="fallbackImgBlur" alt="sample blurred" src="https://picsum.photos/1200/700?random=7" />
+            </div>
+          </div>
+
+          <div class="explain" id="explainBox">
+            <strong>해석 로직(데모)</strong><br>
+            • OFF(표준/1광학부): 광학부(예: 4.0mm) 고정<br>
+            • 동공 &lt; 광학부: “중심(원거리) 흐림” 느낌(센터 마스크 블러)<br>
+            • 동공 &gt; 광학부: “주변 distortion(어항)” 느낌(주변 마스크 블러 + fishbowl)<br>
+            • ON(183): 전체적으로 균형(효과 최소화)<br>
+            <div class="mini">
+              <span class="badge">이미지/카메라 모두 적용</span>
+              <span class="badge">UI는 프로토타입</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div class="note">
-        * 이 페이지는 데모용입니다. 실제 인식/판정 로직은 추후 연결하세요.
-      </div>
-    </section>
-  </main>
+      <!-- ADD x Sphere map -->
+      <div class="mapCard">
+        <div class="mapHead">
+          <h3 style="margin:0">Optical Design Map (ADD × Sphere)</h3>
+          <div class="muted">선택된 조합 위치를 간단히 하이라이트</div>
+        </div>
 
-  <script src="./app.js"></script>
+        <div class="mapGrid" id="mapGrid">
+          <div></div>
+          <div class="muted" style="text-align:center;font-weight:900">-1.00</div>
+          <div class="muted" style="text-align:center;font-weight:900">-2.00</div>
+          <div class="muted" style="text-align:center;font-weight:900">-3.00</div>
+          <div class="muted" style="text-align:center;font-weight:900">-4.00</div>
+          <div class="muted" style="text-align:center;font-weight:900">-5.00</div>
+
+          <div class="yLabel">HIGH</div>
+          <div class="bubble" data-idx="10"></div>
+          <div class="bubble" data-idx="11"></div>
+          <div class="bubble" data-idx="12"></div>
+          <div class="bubble" data-idx="13"></div>
+          <div class="bubble" data-idx="14"></div>
+
+          <div class="yLabel">MID</div>
+          <div class="bubble" data-idx="5"></div>
+          <div class="bubble" data-idx="6"></div>
+          <div class="bubble" data-idx="7"></div>
+          <div class="bubble" data-idx="8"></div>
+          <div class="bubble" data-idx="9"></div>
+
+          <div class="yLabel">LOW</div>
+          <div class="bubble" data-idx="0"></div>
+          <div class="bubble" data-idx="1"></div>
+          <div class="bubble" data-idx="2"></div>
+          <div class="bubble" data-idx="3"></div>
+          <div class="bubble" data-idx="4"></div>
+        </div>
+
+        <div class="muted" style="margin-top:10px">
+          * 데모 맵: 3(ADD)×5(Sphere)로 단순화해 표시했어요.
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  // ====== Elements ======
+  const popup = document.getElementById('popup');
+  const openBtn = document.getElementById('openBtn');
+  const closeBtn = document.getElementById('closeBtn');
+  const camBtn = document.getElementById('camBtn');
+
+  const sphereSel = document.getElementById('sphere');
+  const addSel = document.getElementById('add');
+  const designRadios = document.querySelectorAll('input[name="design"]');
+
+  const pupilEl = document.getElementById('pupil');
+  const pupilText = document.getElementById('pupilText');
+  const opticText = document.getElementById('opticText');
+  const designId = document.getElementById('designId');
+
+  const ringNear = document.getElementById('ringNear');
+  const ringMid  = document.getElementById('ringMid');
+  const ringDist = document.getElementById('ringDist');
+
+  const bubbles = [...document.querySelectorAll('.bubble')];
+
+  const screen = document.getElementById('screen');
+  const statusBadges = document.getElementById('statusBadges');
+
+  // camera / fallback layers
+  const cam = document.getElementById('cam');
+  const camBlur = document.getElementById('camBlur');
+  const fallbackImg = document.getElementById('fallbackImg');
+  const fallbackImgBlur = document.getElementById('fallbackImgBlur');
+
+  // ====== Simple demo constants ======
+  // Pupil estimate by ADD (demo assumption)
+  // LOW (younger/early) -> bigger pupil; HIGH (older/advanced) -> smaller pupil
+  const pupilByAdd = [4.5, 3.8, 3.0]; // mm
+
+  // Standard optic zone (competitor single optic zone) - demo fixed
+  const standardOpticZone = 4.0; // mm
+
+  // ====== Helpers ======
+  function getDesignMode(){
+    return [...designRadios].find(r=>r.checked)?.value || 'standard';
+  }
+
+  function calcIndex(){
+    // add: 0 low,1 mid,2 high
+    // sphere: 0..4
+    // map idx layout: LOW row 0-4, MID row 5-9, HIGH row 10-14
+    const s = Number(sphereSel.value);
+    const a = Number(addSel.value);
+    return a*5 + s;
+  }
+
+  function setBadges(items){
+    statusBadges.innerHTML = '';
+    items.forEach(({label,type})=>{
+      const el = document.createElement('span');
+      el.className = `badge ${type||''}`.trim();
+      el.textContent = label;
+      statusBadges.appendChild(el);
+    });
+  }
+
+  function updateMapHighlight(idx){
+    bubbles.forEach(b=>b.classList.remove('active'));
+    const target = bubbles.find(b=>Number(b.dataset.idx)===idx);
+    if(target) target.classList.add('active');
+  }
+
+  function mmToPupilPx(mm){
+    // map ~2.5-5.5mm to ~46-96px (feel good visually)
+    const minMM = 2.5, maxMM = 5.5;
+    const minPX = 46,  maxPX = 96;
+    const t = Math.max(0, Math.min(1, (mm - minMM)/(maxMM-minMM)));
+    return Math.round(minPX + (maxPX-minPX)*t);
+  }
+
+  function computeDesignId(idx){
+    // just a deterministic demo mapping to look real-ish
+    // e.g., 0..14 -> 60..154
+    return String(60 + idx*7).padStart(3,'0');
+  }
+
+  function applyLensRings(mode, pupilMM, addIdx){
+    // Demo ring sizes:
+    // OFF: fixed rings (less adaptive)
+    // ON : rings adapt: smaller pupil -> relatively larger near; bigger pupil -> relatively larger distance
+    // Also shift a bit with ADD (HIGH -> near grows)
+    const base = 190;
+
+    let near = 78, mid = 128, dist = 186;
+
+    if(mode === 'standard'){
+      // fixed-ish: small adjustments only by ADD (since competitor designs often limited)
+      const addBoost = [ -6, 0, +8 ][addIdx]; // HIGH near slightly bigger
+      near = 76 + addBoost;
+      mid  = 126 + addBoost*0.5;
+      dist = 186;
+    } else {
+      // 183: adapt to pupil + add
+      const pupilT = Math.max(0, Math.min(1, (pupilMM - 2.8)/(5.2-2.8))); // small pupil->0, large->1
+      // near grows when pupilT small and ADD high
+      const addNear = [ 0, +10, +22 ][addIdx];
+      near = 70 + addNear + Math.round((1 - pupilT)*18);
+      mid  = 120 + Math.round((0.5 - Math.abs(pupilT-0.5))*10); // stable mid
+      dist = base - 2; // keep
+    }
+
+    ringNear.style.width = `${near}px`; ringNear.style.height = `${near}px`;
+    ringMid.style.width  = `${mid}px`;  ringMid.style.height  = `${mid}px`;
+    ringDist.style.width = `${dist}px`; ringDist.style.height = `${dist}px`;
+  }
+
+  function applyVisionEffect(mode, pupilMM){
+    // Determine mismatch scenario only when standard
+    // - pupil < opticZone: "center blur" -> mask-center
+    // - pupil > opticZone: "periphery blur + fishbowl" -> mask-periphery + fishbowl
+    // ON: minimal effects
+    screen.classList.remove('mask-center','mask-periphery','fishbowl');
+
+    const diff = pupilMM - standardOpticZone; // mm
+    const absDiff = Math.abs(diff);
+
+    if(mode === '183'){
+      setBadges([
+        {label:'183 ON', type:'good'},
+        {label:'Balanced vision (demo)', type:'good'},
+        {label:`Pupil ${pupilMM.toFixed(1)}mm`, type:''}
+      ]);
+      return;
+    }
+
+    // Standard
+    if(absDiff < 0.25){
+      setBadges([
+        {label:'OFF(표준)', type:'warn'},
+        {label:'Pupil≈Optic zone', type:'warn'},
+        {label:`Pupil ${pupilMM.toFixed(1)}mm / OZ 4.0mm`, type:''}
+      ]);
+      // subtle, no heavy effect
+      return;
+    }
+
+    if(diff < 0){
+      // pupil smaller than optic zone -> center blur
+      screen.classList.add('mask-center');
+      setBadges([
+        {label:'OFF(표준)', type:'warn'},
+        {label:'Pupil < Optic zone', type:'bad'},
+        {label:'Distance blur (center)', type:'bad'},
+        {label:`Pupil ${pupilMM.toFixed(1)}mm / OZ 4.0mm`, type:''}
+      ]);
+    } else {
+      // pupil larger -> periphery issues & fishbowl
+      screen.classList.add('mask-periphery','fishbowl');
+      setBadges([
+        {label:'OFF(표준)', type:'warn'},
+        {label:'Pupil > Optic zone', type:'bad'},
+        {label:'Periphery distortion (fishbowl)', type:'bad'},
+        {label:`Pupil ${pupilMM.toFixed(1)}mm / OZ 4.0mm`, type:''}
+      ]);
+    }
+  }
+
+  function updateAll(){
+    const addIdx = Number(addSel.value);
+    const pupilMM = pupilByAdd[addIdx];
+    const pupilPX = mmToPupilPx(pupilMM);
+    pupilEl.style.width = `${pupilPX}px`;
+    pupilEl.style.height = `${pupilPX}px`;
+    pupilText.textContent = `${pupilMM.toFixed(1)} mm`;
+
+    opticText.textContent = `${standardOpticZone.toFixed(1)} mm`;
+
+    const idx = calcIndex();
+    updateMapHighlight(idx);
+    designId.textContent = `#${computeDesignId(idx)}`;
+
+    const mode = getDesignMode();
+    applyLensRings(mode, pupilMM, addIdx);
+    applyVisionEffect(mode, pupilMM);
+  }
+
+  // ====== Popup open/close ======
+  openBtn.addEventListener('click', ()=>{
+    popup.style.display = 'flex';
+    popup.setAttribute('aria-hidden','false');
+    updateAll();
+  });
+
+  closeBtn.addEventListener('click', ()=>{
+    stopCamera();
+    popup.style.display = 'none';
+    popup.setAttribute('aria-hidden','true');
+  });
+
+  popup.addEventListener('click', (e)=>{
+    if(e.target === popup){
+      stopCamera();
+      popup.style.display = 'none';
+      popup.setAttribute('aria-hidden','true');
+    }
+  });
+
+  // ====== Controls ======
+  sphereSel.addEventListener('change', updateAll);
+  addSel.addEventListener('change', updateAll);
+  designRadios.forEach(r=>r.addEventListener('change', updateAll));
+
+  // ====== Map click (optional) ======
+  bubbles.forEach(b=>{
+    b.style.cursor='pointer';
+    b.title = '해당 조합 위치(데모)';
+    b.addEventListener('click', ()=>{
+      const idx = Number(b.dataset.idx);
+      // reverse map to set selects
+      const a = Math.floor(idx/5);
+      const s = idx % 5;
+      addSel.value = String(a);
+      sphereSel.value = String(s);
+      updateAll();
+    });
+  });
+
+  // ====== Camera logic ======
+  let stream = null;
+  async function startCamera(){
+    if(stream) return;
+    try{
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio:false });
+      cam.srcObject = stream;
+      camBlur.srcObject = stream;
+
+      cam.style.display = 'block';
+      camBlur.style.display = 'block';
+      fallbackImg.style.display = 'none';
+      fallbackImgBlur.style.display = 'none';
+
+      camBtn.textContent = '카메라 OFF';
+      camBtn.classList.add('primary');
+    }catch(err){
+      alert('카메라 접근이 불가해서 샘플 이미지로 표시합니다.\n(브라우저 권한/HTTPS 환경 확인)');
+      // fallback stays
+      stream = null;
+      camBtn.textContent = '카메라 ON';
+      camBtn.classList.remove('primary');
+    }
+  }
+
+  function stopCamera(){
+    if(stream){
+      stream.getTracks().forEach(t=>t.stop());
+      stream = null;
+    }
+    cam.srcObject = null;
+    camBlur.srcObject = null;
+
+    cam.style.display = 'none';
+    camBlur.style.display = 'none';
+    fallbackImg.style.display = 'block';
+    fallbackImgBlur.style.display = 'block';
+
+    camBtn.textContent = '카메라 ON';
+    camBtn.classList.remove('primary');
+  }
+
+  camBtn.addEventListener('click', ()=>{
+    if(stream) stopCamera();
+    else startCamera();
+  });
+
+  // init
+  updateAll();
+</script>
 </body>
 </html>
