@@ -224,6 +224,34 @@
     transition: width .35s ease, height .35s ease;
   }
 
+  /* ✅ 추천 1) 점선=동공 라벨 (렌즈 구조 안쪽) */
+  .lensLabel{
+    position:absolute;
+    left:50%;
+    top:50%;
+    transform:translate(-50%,-50%);
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    pointer-events:none;
+    text-align:center;
+  }
+  .lensBadge{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    padding:6px 10px;
+    border-radius:999px;
+    font-weight:900;
+    font-size:12px;
+    border:1px solid var(--line);
+    background:rgba(255,255,255,.88);
+    color:var(--sub);
+    backdrop-filter: blur(4px);
+  }
+  .lensBadge strong{ color:var(--text); }
+
   .ring{
     position:absolute;
     left:50%; top:50%;
@@ -381,9 +409,7 @@
   <!-- ===== Top controls (팝업 해제) ===== -->
   <div class="topbar">
     <div class="controls">
-      <!-- 3) 스페리컬 -> 원용도수 -->
       <label>원용도수
-        <!-- 4) +6 ~ -9 -->
         <select id="sphere"></select>
       </label>
 
@@ -398,14 +424,12 @@
       <div class="toggleGroup">
         <strong>Lens Design</strong>
         <div class="radio">
-          <!-- 5) OFF/ON 문구 변경 -->
           <label><input type="radio" name="design" value="standard" checked> OFF(1가지 광학부)</label>
           <label><input type="radio" name="design" value="183"> ON(183개 동공 사이즈별 광학부)</label>
         </div>
       </div>
     </div>
 
-    <!-- 1) 카메라 ON 위치 조정: 상단 우측 -->
     <div class="rightActions">
       <button class="btn" id="camBtn">카메라 ON</button>
     </div>
@@ -425,10 +449,8 @@
         <div class="spec">
           <div class="pill"><span>Estimated Pupil</span> <b id="pupilText">4.0 mm</b></div>
 
-          <!-- 6) Rule -> 가이드 / 7) 문구 변경 -->
           <div class="pill"><span>가이드</span> <b>도수, 가입도에따라 달라지는 동공사이즈</b></div>
 
-          <!-- 8) 각주 문구 변경 -->
           <div class="muted" id="pupilNote">
             *데모: 동공사이즈 및 이미지는 이해를 돕기 위한 가상이미지 입니다.
           </div>
@@ -445,7 +467,12 @@
           <div class="ozRing" id="ozRing"></div>
           <div class="pupilOverlay" id="pupilOverlay"></div>
 
-          <!-- rings (항상 OZ 안쪽) -->
+          <!-- ✅ 추천 1) 점선=동공, 실선=광학부 라벨 -->
+          <div class="lensLabel" aria-hidden="true">
+            <div class="lensBadge"><strong>점선</strong> = 동공</div>
+            <div class="lensBadge"><strong>OZ</strong> = 광학부</div>
+          </div>
+
           <div class="ring dist" id="ringDist"></div>
           <div class="ring mid"  id="ringMid"></div>
           <div class="ring near" id="ringNear"></div>
@@ -453,17 +480,12 @@
 
         <div class="legend">
           <div class="tagRow">
-            <!-- 9) 영어 삭제: 원/중/근만 -->
             <div class="tag"><span class="dot d"></span> 원</div>
             <div class="tag"><span class="dot m"></span> 중</div>
             <div class="tag"><span class="dot n"></span> 근</div>
           </div>
 
-          <!-- 11) Estimated Optic Zone -->
           <div class="pill"><span>Estimated Optic Zone</span> <b id="opticText">5.0 mm</b></div>
-
-          <!-- 10) 렌즈 직경 설명 삭제 + (노란색 칠한 문장 전체 삭제) -->
-          <!-- (아무 텍스트도 남기지 않음) -->
         </div>
       </div>
     </div>
@@ -492,8 +514,6 @@
         </div>
       </div>
 
-      <!-- 1) 해석 로직(데모): OFF/ON 선택 상태에 따라 해당 문구만 노출
-           2) 하단 배지 2개 삭제(아예 없음) -->
       <div class="explain" id="explainBox">
         <strong>해석 로직(데모)</strong><br>
         <div id="logicStandard" style="display:block">
@@ -507,8 +527,6 @@
       </div>
     </div>
   </div>
-
-  <!-- 3) 하단 옵틱 디자인 맵 삭제: (섹션 자체 없음) -->
 
 </div>
 
@@ -543,12 +561,9 @@
   const fallbackImgBlur = document.getElementById('fallbackImgBlur');
 
   // ====== Constants ======
-  // 6) 고정 광학부(OFF) = 5.0mm
   const standardOpticZone = 5.0;
 
-  // lens drawing scale: lens is 14.5mm mapped to 220px (same as .lens size)
   function getLensPx(){
-    // read actual size to keep responsive safe
     const rect = document.querySelector('.lens').getBoundingClientRect();
     return Math.min(rect.width, rect.height);
   }
@@ -567,58 +582,48 @@
       const sign = v>0 ? "+" : "";
       return `<option value="${v.toFixed(2)}">${sign}${v.toFixed(2)}</option>`;
     }).join("");
-    sphereSel.value = (-4).toFixed(2); // default like screenshot-ish
+    sphereSel.value = (-4).toFixed(2);
   })();
 
   function getDesignMode(){
     return [...designRadios].find(r=>r.checked)?.value || 'standard';
   }
 
-  // 4) 동공사이즈 규칙 반영
-  // - 마이너스: |-| 커질수록 동공 커짐
-  // - 플러스: |+| 커질수록 동공 작아짐
   function calcPupilMM(){
-    const sphere = parseFloat(sphereSel.value); // +6 ~ -9
-    const addIdx = Number(addSel.value); // 0,1,2
+    const sphere = parseFloat(sphereSel.value);
+    const addIdx = Number(addSel.value);
 
-    // base + add 영향(가입도 높을수록 작아짐)
-    let pupil = 4.6; // baseline
+    let pupil = 4.6;
     if(addIdx === 1) pupil -= 0.35;
     if(addIdx === 2) pupil -= 0.75;
 
     const absS = Math.abs(sphere);
-    const step = 0.08; // "미세하게 변경"
+    const step = 0.08;
     if(sphere < 0){
-      pupil += absS * step;     // minus -> bigger abs -> bigger pupil
+      pupil += absS * step;
     }else if(sphere > 0){
-      pupil -= absS * step;     // plus -> bigger abs -> smaller pupil
+      pupil -= absS * step;
     }
 
-    // clamp
     pupil = Math.max(2.6, Math.min(6.6, pupil));
     return pupil;
   }
 
   function mmToEyePupilPx(mm){
-    // eye pupil visual mapping (2.6~6.6mm)
     const minMM = 2.6, maxMM = 6.6;
     const minPX = 44,  maxPX = 110;
     const t = Math.max(0, Math.min(1, (mm - minMM)/(maxMM-minMM)));
     return Math.round(minPX + (maxPX-minPX)*t);
   }
 
-  // OFF: OZ=5.0 고정 / ON: OZ≈Pupil (클램프)
   function calcOpticZoneMM(mode, pupilMM){
     if(mode === 'standard') return standardOpticZone;
-    // ON: pupil과 거의 일치(클램프)
     return Math.max(3.0, Math.min(6.0, pupilMM));
   }
 
-  // 원/중/근 링은 항상 OZ 안쪽 (비율 고정)
   function applyLensRings(mode, ozMM){
     const ozPx = mmToLensPx(ozMM);
 
-    // 링 비율(모두 OZ 안쪽)
     const dist = ozPx * 0.95;
     const mid  = ozPx * 0.70;
     const near = ozPx * 0.45;
@@ -627,7 +632,6 @@
     ringMid.style.width  = `${mid}px`;  ringMid.style.height  = `${mid}px`;
     ringNear.style.width = `${near}px`; ringNear.style.height = `${near}px`;
 
-    // OZ 링 표시
     ozRing.style.width = `${ozPx}px`;
     ozRing.style.height = `${ozPx}px`;
   }
@@ -653,7 +657,6 @@
     });
   }
 
-  // Vision effect: compare pupil vs OZ
   function applyVisionEffect(mode, pupilMM, ozMM){
     screen.classList.remove('mask-center','mask-periphery','fishbowl');
 
@@ -669,7 +672,6 @@
       return;
     }
 
-    // OFF
     if(absDiff < 0.25){
       setBadges([
         {label:'OFF', type:'warn'},
@@ -727,7 +729,6 @@
     updateLogicBox(mode);
   }
 
-  // ====== Events ======
   sphereSel.addEventListener('change', updateAll);
   addSel.addEventListener('change', updateAll);
   designRadios.forEach(r=>r.addEventListener('change', updateAll));
@@ -779,7 +780,6 @@
     else startCamera();
   });
 
-  // init
   updateAll();
 </script>
 </body>
