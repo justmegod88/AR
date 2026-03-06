@@ -23,7 +23,6 @@
     padding:18px;
   }
 
-  /* ===== Layout wrapper (팝업 해제) ===== */
   .wrap{
     max-width:1100px;
     margin:0 auto;
@@ -32,7 +31,6 @@
     gap:12px;
   }
 
-  /* ===== Top controls ===== */
   .topbar{
     border:1px solid var(--line);
     background:var(--card);
@@ -87,13 +85,6 @@
     gap:6px;
   }
 
-  /* 카메라 ON 위치 조정(상단 우측 고정 영역) */
-  .rightActions{
-    display:flex;
-    gap:10px;
-    align-items:flex-start;
-    flex-shrink:0;
-  }
   .btn{
     border:1px solid var(--line);
     background:#fff;
@@ -109,7 +100,6 @@
     color:#fff;
   }
 
-  /* ===== Middle grid (동공/렌즈) ===== */
   .grid{
     display:grid;
     grid-template-columns: 1fr 1fr;
@@ -128,7 +118,6 @@
   }
   .muted{ color:var(--sub); font-weight:800; font-size:13px; line-height:1.45; }
 
-  /* patient pupil */
   .pupilWrap{
     display:flex;
     gap:12px;
@@ -186,7 +175,6 @@
     font-weight:900;
   }
 
-  /* lens structure */
   .lensWrap{
     display:flex;
     gap:12px;
@@ -204,7 +192,6 @@
     flex:0 0 auto;
   }
 
-  /* pupil overlay + OZ ring */
   .ozRing{
     position:absolute;
     left:50%; top:50%;
@@ -265,7 +252,6 @@
   .dot.m{ background:rgba(0,160,120,.85); }
   .dot.d{ background:rgba(0,94,184,.85); }
 
-  /* ===== Vision simulation ===== */
   .visionCard{
     border:1px solid var(--line);
     border-radius:16px;
@@ -278,31 +264,6 @@
     align-items:flex-start;
     gap:12px;
     margin-bottom:10px;
-  }
-  .status{
-    display:flex;
-    gap:10px;
-    flex-wrap:wrap;
-    align-items:center;
-  }
-  .badge{
-    padding:6px 10px;
-    border-radius:999px;
-    font-weight:900;
-    font-size:12px;
-    border:1px solid var(--line);
-    background:#fafbfc;
-    color:var(--sub);
-  }
-  .badge.good{ border-color: rgba(0,160,120,.35); background: rgba(0,160,120,.08); color:#0b5; }
-  .badge.warn{ border-color: rgba(255,140,0,.35); background: rgba(255,140,0,.10); color:#b45309; }
-  .badge.bad { border-color: rgba(220,38,38,.35); background: rgba(220,38,38,.10); color:#b91c1c; }
-
-  .visionStage{
-    display:grid;
-    grid-template-columns: 1fr 320px;
-    gap:12px;
-    align-items:stretch;
   }
 
   .screen{
@@ -339,6 +300,13 @@
   }
   .fishbowl .layer.base{ filter:url(#fishbowlFilter); }
 
+  .visionGrid{
+    display:grid;
+    grid-template-columns: 1fr 320px;
+    gap:12px;
+    align-items:stretch;
+  }
+
   .explain{
     border:1px solid var(--line);
     border-radius:16px;
@@ -351,17 +319,15 @@
   }
   .explain strong{ color:var(--text); }
 
-  /* ===== Mobile ===== */
   @media (max-width: 980px){
     body{ padding:12px; }
     .topbar{ gap:8px; }
     .grid{ grid-template-columns: 1fr; }
-    .visionStage{ grid-template-columns: 1fr; }
+    .visionGrid{ grid-template-columns: 1fr; }
   }
   @media (max-width: 520px){
     .eye,.lens{ width:190px; height:190px; }
     .pupilWrap,.lensWrap{ flex-direction:column; align-items:flex-start; }
-    .rightActions{ align-items:center; }
     .btn{ padding:10px 12px; }
   }
 </style>
@@ -370,7 +336,6 @@
 <body>
 <div class="wrap">
 
-  <!-- SVG filter for fishbowl-ish distortion -->
   <svg width="0" height="0" style="position:absolute">
     <filter id="fishbowlFilter" x="-20%" y="-20%" width="140%" height="140%">
       <feTurbulence type="fractalNoise" baseFrequency="0.008" numOctaves="1" seed="2" result="noise"/>
@@ -378,7 +343,6 @@
     </filter>
   </svg>
 
-  <!-- ===== Top controls (팝업 해제) ===== -->
   <div class="topbar">
     <div class="controls">
       <label>원용도수
@@ -394,22 +358,16 @@
       </label>
 
       <div class="toggleGroup">
-        <strong>Lens Design</strong>
+        <strong>광학부 디자인</strong>
         <div class="radio">
           <label><input type="radio" name="design" value="standard" checked> OFF(1가지 광학부)</label>
-          <label><input type="radio" name="design" value="183"> ON(183개 동공 사이즈별 광학부)</label>
+          <label><input type="radio" name="design" value="183"> ON(183가지 동공 사이즈별 광학부)</label>
         </div>
       </div>
     </div>
-
-    <div class="rightActions">
-      <button class="btn" id="camBtn">카메라 ON</button>
-    </div>
   </div>
 
-  <!-- ===== Pupil + Lens ===== -->
   <div class="grid">
-    <!-- Patient pupil -->
     <div class="card">
       <h3>도수, 나이에 따른 동공 사이즈</h3>
       <div class="pupilWrap">
@@ -428,12 +386,10 @@
       </div>
     </div>
 
-    <!-- Lens structure -->
     <div class="card">
       <h3>렌즈 구조</h3>
       <div class="lensWrap">
         <div class="lens" aria-label="lens">
-          <!-- OZ + Pupil overlay -->
           <div class="ozRing" id="ozRing"></div>
           <div class="pupilOverlay" id="pupilOverlay"></div>
 
@@ -449,23 +405,24 @@
             <div class="tag"><span class="dot n"></span> 근</div>
           </div>
 
+          <div class="muted">- - 동공</div>
+
           <div class="pill"><span>Estimated Optic Zone</span> <b id="opticText">5.0 mm</b></div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ===== Vision simulation ===== -->
   <div class="visionCard">
     <div class="visionHead">
       <div>
         <h3 style="margin:0">Vision Simulation</h3>
-        <div class="muted">OFF에서 “동공 vs 광학부” mismatch 시야 문제를 체험형으로 보여주는 데모</div>
+        <div class="muted">동공과 광학부 사이즈에 따른 시야 시뮬레이션</div>
       </div>
-      <div class="status" id="statusBadges"></div>
+      <button class="btn" id="camBtn">카메라 ON</button>
     </div>
 
-    <div class="visionStage">
+    <div class="visionGrid">
       <div class="screen" id="screen">
         <div class="layer base" id="baseLayer">
           <video id="cam" playsinline autoplay muted style="display:none"></video>
@@ -479,15 +436,11 @@
       </div>
 
       <div class="explain" id="explainBox">
-        <strong>해석 로직(데모)</strong><br>
-        <div id="logicStandard" style="display:block">
-          • OFF(1가지 광학부): 광학부(OZ) 고정<br>
-          • 동공 &lt; 광학부: “중심(원거리) 흐림” 느낌(센터 마스크 블러)<br>
-          • 동공 &gt; 광학부: “주변 distortion(어항)” 느낌(주변 마스크 블러 + fishbowl)<br>
-        </div>
-        <div id="logic183" style="display:none">
-          • ON(183): 전체적으로 균형(효과 최소화)<br>
-        </div>
+        <strong>시뮬레이션 해석</strong><br><br>
+
+        <div class="tagRow" id="explainTags"></div>
+
+        <div class="muted" id="explainConclusion" style="margin-top:12px;"></div>
       </div>
     </div>
   </div>
@@ -495,7 +448,6 @@
 </div>
 
 <script>
-  // ====== Elements ======
   const camBtn = document.getElementById('camBtn');
 
   const sphereSel = document.getElementById('sphere');
@@ -514,17 +466,15 @@
   const pupilOverlay = document.getElementById('pupilOverlay');
 
   const screen = document.getElementById('screen');
-  const statusBadges = document.getElementById('statusBadges');
-
-  const logicStandard = document.getElementById('logicStandard');
-  const logic183 = document.getElementById('logic183');
 
   const cam = document.getElementById('cam');
   const camBlur = document.getElementById('camBlur');
   const fallbackImg = document.getElementById('fallbackImg');
   const fallbackImgBlur = document.getElementById('fallbackImgBlur');
 
-  // ====== Constants ======
+  const explainTags = document.getElementById('explainTags');
+  const explainConclusion = document.getElementById('explainConclusion');
+
   const standardOpticZone = 5.0;
 
   function getLensPx(){
@@ -536,7 +486,6 @@
     return (mm / 14.5) * lensPx;
   }
 
-  // ====== Build sphere options (+6 ~ -9) ======
   (function buildSphere(){
     const vals = [];
     for(let v=6; v>=-9; v--){
@@ -585,7 +534,7 @@
     return Math.max(3.0, Math.min(6.0, pupilMM));
   }
 
-  function applyLensRings(mode, ozMM){
+  function applyLensRings(ozMM){
     const ozPx = mmToLensPx(ozMM);
 
     const dist = ozPx * 0.95;
@@ -611,14 +560,15 @@
     ozRing.style.height = `${ozPx}px`;
   }
 
-  function setBadges(items){
-    statusBadges.innerHTML = '';
-    items.forEach(({label,type})=>{
+  function setExplain(tags, conclusion){
+    explainTags.innerHTML = '';
+    tags.forEach(({label,type})=>{
       const el = document.createElement('span');
       el.className = `badge ${type||''}`.trim();
       el.textContent = label;
-      statusBadges.appendChild(el);
+      explainTags.appendChild(el);
     });
+    explainConclusion.textContent = conclusion;
   }
 
   function applyVisionEffect(mode, pupilMM, ozMM){
@@ -628,49 +578,49 @@
     const absDiff = Math.abs(diff);
 
     if(mode === '183'){
-      setBadges([
-        {label:'ON(183)', type:'good'},
-        {label:'Balanced vision (demo)', type:'good'},
-        {label:`Pupil ${pupilMM.toFixed(1)}mm / OZ ${ozMM.toFixed(1)}mm`, type:''}
-      ]);
+      setExplain(
+        [
+          {label:'ON', type:'good'},
+          {label:`Pupil ${pupilMM.toFixed(1)}mm / OZ ${ozMM.toFixed(1)}mm`, type:''}
+        ],
+        '동공사이즈와 광학부가 유사하여 전반적으로 선명하게 보입니다.'
+      );
       return;
     }
 
     if(absDiff < 0.25){
-      setBadges([
-        {label:'OFF', type:'warn'},
-        {label:'Pupil≈Optic zone', type:'warn'},
-        {label:`Pupil ${pupilMM.toFixed(1)}mm / OZ ${ozMM.toFixed(1)}mm`, type:''}
-      ]);
+      setExplain(
+        [
+          {label:'OFF', type:'warn'},
+          {label:`Pupil ${pupilMM.toFixed(1)}mm / OZ ${ozMM.toFixed(1)}mm`, type:''}
+        ],
+        '동공사이즈와 광학부가 유사하여 시야 영향이 비교적 적습니다.'
+      );
       return;
     }
 
     if(diff < 0){
       screen.classList.add('mask-center');
-      setBadges([
-        {label:'OFF', type:'warn'},
-        {label:'Pupil < Optic zone', type:'bad'},
-        {label:'Distance blur (center)', type:'bad'},
-        {label:`Pupil ${pupilMM.toFixed(1)}mm / OZ ${ozMM.toFixed(1)}mm`, type:''}
-      ]);
+      setExplain(
+        [
+          {label:'OFF', type:'warn'},
+          {label:'동공사이즈 < 광학부', type:'bad'},
+          {label:'원거리 흐림', type:'bad'},
+          {label:`Pupil ${pupilMM.toFixed(1)}mm / OZ ${ozMM.toFixed(1)}mm`, type:''}
+        ],
+        '동공사이즈가 광학부보다 작아 중심부터 흐림 발생'
+      );
     } else {
       screen.classList.add('mask-periphery','fishbowl');
-      setBadges([
-        {label:'OFF', type:'warn'},
-        {label:'Pupil > Optic zone', type:'bad'},
-        {label:'Periphery distortion (fishbowl)', type:'bad'},
-        {label:`Pupil ${pupilMM.toFixed(1)}mm / OZ ${ozMM.toFixed(1)}mm`, type:''}
-      ]);
-    }
-  }
-
-  function updateLogicBox(mode){
-    if(mode === '183'){
-      logicStandard.style.display = 'none';
-      logic183.style.display = 'block';
-    } else {
-      logicStandard.style.display = 'block';
-      logic183.style.display = 'none';
+      setExplain(
+        [
+          {label:'OFF', type:'warn'},
+          {label:'동공사이즈 > 광학부', type:'bad'},
+          {label:'주변 흐림', type:'bad'},
+          {label:`Pupil ${pupilMM.toFixed(1)}mm / OZ ${ozMM.toFixed(1)}mm`, type:''}
+        ],
+        '동공사이즈가 광학부 보다 커서 주변부터 흐림 발생'
+      );
     }
   }
 
@@ -686,11 +636,9 @@
     const ozMM = calcOpticZoneMM(mode, pupilMM);
     opticText.textContent = `${ozMM.toFixed(1)} mm`;
 
-    applyLensRings(mode, ozMM);
+    applyLensRings(ozMM);
     applyOverlays(pupilMM, ozMM);
-
     applyVisionEffect(mode, pupilMM, ozMM);
-    updateLogicBox(mode);
   }
 
   sphereSel.addEventListener('change', updateAll);
@@ -698,7 +646,6 @@
   designRadios.forEach(r=>r.addEventListener('change', updateAll));
   window.addEventListener('resize', ()=>{ updateAll(); });
 
-  // ====== Camera logic ======
   let stream = null;
   async function startCamera(){
     if(stream) return;
