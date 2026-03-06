@@ -210,7 +210,7 @@
     left:50%; top:50%;
     transform:translate(-50%,-50%);
     border-radius:50%;
-    border:2px dashed rgba(72,101,129,.65);
+    border:2px solid rgba(72,101,129,.65);
     width:0; height:0;
     transition: width .35s ease, height .35s ease;
   }
@@ -219,38 +219,10 @@
     left:50%; top:50%;
     transform:translate(-50%,-50%);
     border-radius:50%;
-    border:2px solid rgba(0,0,0,.28);
+    border:2px dashed rgba(72,101,129,.65);
     width:0; height:0;
     transition: width .35s ease, height .35s ease;
   }
-
-  /* ✅ 추천 1) 점선=동공 라벨 (렌즈 구조 안쪽) */
-  .lensLabel{
-    position:absolute;
-    left:50%;
-    top:50%;
-    transform:translate(-50%,-50%);
-    display:flex;
-    flex-direction:column;
-    gap:6px;
-    pointer-events:none;
-    text-align:center;
-  }
-  .lensBadge{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    gap:6px;
-    padding:6px 10px;
-    border-radius:999px;
-    font-weight:900;
-    font-size:12px;
-    border:1px solid var(--line);
-    background:rgba(255,255,255,.88);
-    color:var(--sub);
-    backdrop-filter: blur(4px);
-  }
-  .lensBadge strong{ color:var(--text); }
 
   .ring{
     position:absolute;
@@ -439,7 +411,7 @@
   <div class="grid">
     <!-- Patient pupil -->
     <div class="card">
-      <h3>환자 동공</h3>
+      <h3>도수, 나이에 따른 동공 사이즈</h3>
       <div class="pupilWrap">
         <div class="eye" aria-label="eye">
           <div class="iris"></div>
@@ -449,10 +421,8 @@
         <div class="spec">
           <div class="pill"><span>Estimated Pupil</span> <b id="pupilText">4.0 mm</b></div>
 
-          <div class="pill"><span>가이드</span> <b>도수, 가입도에따라 달라지는 동공사이즈</b></div>
-
           <div class="muted" id="pupilNote">
-            *데모: 동공사이즈 및 이미지는 이해를 돕기 위한 가상이미지 입니다.
+            *동공사이즈 및 이미지는 이해를 돕기 위한 가상이미지 입니다.
           </div>
         </div>
       </div>
@@ -466,12 +436,6 @@
           <!-- OZ + Pupil overlay -->
           <div class="ozRing" id="ozRing"></div>
           <div class="pupilOverlay" id="pupilOverlay"></div>
-
-          <!-- ✅ 추천 1) 점선=동공, 실선=광학부 라벨 -->
-          <div class="lensLabel" aria-hidden="true">
-            <div class="lensBadge"><strong>점선</strong> = 동공</div>
-            <div class="lensBadge"><strong>OZ</strong> = 광학부</div>
-          </div>
 
           <div class="ring dist" id="ringDist"></div>
           <div class="ring mid"  id="ringMid"></div>
